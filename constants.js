@@ -11,7 +11,9 @@ const remarkTypes = {
 const getMenuKeyboard = (options) => {
   return {
     reply_markup: {
-      keyboard: options.map(option => [{ text: option }]),
+      // добавлять к кнопкам назад в главное меню
+      keyboard: options.map(option => [{ text: option }]).concat([[{ text: 'Назад в главное меню' }]]),
+      //keyboard: options.map(option => [{ text: option }]) ,
       one_time_keyboard: true,
     },
   };
@@ -21,3 +23,4 @@ module.exports = {
   remarkTypes,
   getMenuKeyboard,
 };
+
