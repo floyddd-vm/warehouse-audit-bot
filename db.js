@@ -59,6 +59,10 @@ const Remark = sequelize.define('Remark', {
       key: 'id',
     },
   },
+  createdAt: {
+    type: DataTypes.DATE,
+    defaultValue: Sequelize.NOW,
+  },
 }, {
   timestamps: true,
 });

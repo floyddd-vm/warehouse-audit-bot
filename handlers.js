@@ -61,7 +61,7 @@ async function handleRemarkCreation(bot, msg, user) {
       });
     } else {
       inspectionData[chatId] = { cellAddress: text, userId: user.id };
-      await user.update({ currentStep: 3 });
+      await user.update({ currentStep: 4 });
       bot.sendMessage(chatId, 'Выберите тип замечания:', getMenuKeyboard(Object.keys(remarkTypes)));
     }
   } else if (user.currentStep === 3) {
@@ -70,7 +70,7 @@ async function handleRemarkCreation(bot, msg, user) {
       bot.sendMessage(chatId, 'Выберите тип замечания:', getMenuKeyboard(Object.keys(remarkTypes)));
     } else if (remarkTypes[text]) {
       inspectionData[chatId].remarkType = text;
-      await user.update({ currentStep: 5 }); // Переход на шаг 5
+      await user.update({ currentStep: 5 });
       bot.sendMessage(chatId, 'Выберите подтип замечания:', {
         reply_markup: {
           keyboard: remarkTypes[text].map(subtype => [{ text: subtype }]).concat([[{ text: 'Назад' }]]),
@@ -89,7 +89,7 @@ async function handleRemarkCreation(bot, msg, user) {
       await user.update({ currentStep: 5 });
       bot.sendMessage(chatId, 'Выберите подтип замечания:', {
         reply_markup: {
-          keyboard: remarkTypes[text].map(subtype => [{ text: subtype }]).concat([[{ text: 'Назад' }]]),
+          keyboard: remarkTypes[text].map(subtype => [{ text: subtype }]).concat([[{ text: 'Назад' }]]).concat([[{ text: 'Назад в главное меню' }]]),
           one_time_keyboard: true,
         },
       });
@@ -105,7 +105,7 @@ async function handleRemarkCreation(bot, msg, user) {
       await user.update({ currentStep: 4 });
       bot.sendMessage(chatId, 'Выберите подтип замечания:', {
         reply_markup: {
-          keyboard: remarkTypes[inspectionData[chatId].remarkType].map(subtype => [{ text: subtype }]).concat([[{ text: 'Назад' }]]),
+          keyboard: remarkTypes[inspectionData[chatId].remarkType].map(subtype => [{ text: subtype }]).concat([[{ text: 'Назад' }]]).concat([[{ text: 'Назад в главное меню' }]]),
           one_time_keyboard: true,
         },
       });
