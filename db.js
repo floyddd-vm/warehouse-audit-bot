@@ -31,6 +31,10 @@ const User = sequelize.define('User', {
 });
 
 const Remark = sequelize.define('Remark', {
+  location: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
   cellAddress: {
     type: DataTypes.STRING,
     allowNull: false,

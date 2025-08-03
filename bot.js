@@ -1,7 +1,8 @@
 require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
-const { handleStart, handleRemarkCreation, handleRemarkStatusChange, handleDownloadReport } = require('./handlers');
+const { handleStart, handleRemarkCreation, handleRemarkStatusChange, handleDownloadReport, testBitrix24 } = require('./handlers');
 const { User } = require('./db');
+const { sendToBitrix24 } = require('./bitrix.js');
 
 function startPolling() {
 
@@ -26,12 +27,12 @@ function startPolling() {
       await user.update({ currentStep: 1 });
       handleRemarkCreation(bot, msg, user);
     } else if (text === 'Изменить статус замечания') {
-      await user.update({ currentStep: 7 });
+      await user.update({ currentStep: 8 });
       handleRemarkStatusChange(bot, msg, user);
     } else if (text === 'Скачать отчет') {
       handleDownloadReport(bot, chatId);
     } else if (user.currentStep > 0) {
-      if (user.currentStep < 7) {
+      if (user.currentStep < 8) {
         handleRemarkCreation(bot, msg, user);
       } else {
         handleRemarkStatusChange(bot, msg, user);

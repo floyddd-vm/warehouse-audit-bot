@@ -1,7 +1,8 @@
 const { User, Remark } = require('./db');
 const { generateReport } = require('./utils');
-const { getMenuKeyboard, remarkTypes } = require('./constants');
+const { getMenuKeyboard, remarkTypes, locations, REMARK_TYPE_LIST, REMARK_SUBTYPE_LIST, LOCATION_LIST } = require('./constants');
 const fs = require('fs');
+const { sendToBitrix24 } = require('./bitrix.js');
 
 const inspectionData = {}; // Объект для хранения данных осмотров
 
@@ -39,8 +40,13 @@ async function handleRemarkCreation(bot, msg, user) {
 
   if (user.currentStep === 1) {
     await user.update({ currentStep: 2 });
+    bot.sendMessage(chatId, 'Выберите локацию:', getMenuKeyboard(locations));
+  }else if (user.currentStep === 2) {
+    await user.update({ currentStep: 3 });
+    //TODO: validate location
+    inspectionData[chatId] = { location: text, userId: user.id, };
     bot.sendMessage(chatId, 'Введите адрес ячейки:');
-  } else if (user.currentStep === 2) {
+  } else if (user.currentStep === 3) {
     const openRemarks = await Remark.findAll({ where: { cellAddress: text, status: 'открыто' } });
     if (openRemarks.length > 0) {
       let remarksText = 'Существующие замечания для этой ячейки:\n';
@@ -48,8 +54,9 @@ async function handleRemarkCreation(bot, msg, user) {
         remarksText += `${index + 1}. ${remark.remarkSubtype} - ${remark.comment}\n`;
       });
       remarksText += '\nВыберите одно из замечаний для изменения статуса или добавьте новое.';
-      inspectionData[chatId] = { cellAddress: text, userId: user.id, existingRemarks: openRemarks };
-      await user.update({ currentStep: 3 });
+      inspectionData[chatId].cellAddress = text;
+      inspectionData[chatId].existingRemarks = openRemarks;
+      await user.update({ currentStep: 4 });
       bot.sendMessage(chatId, remarksText, {
         reply_markup: {
           keyboard: [
@@ -60,17 +67,17 @@ async function handleRemarkCreation(bot, msg, user) {
         },
       });
     } else {
-      inspectionData[chatId] = { cellAddress: text, userId: user.id };
-      await user.update({ currentStep: 4 });
+      inspectionData[chatId].cellAddress = text;
+      await user.update({ currentStep: 5 });
       bot.sendMessage(chatId, 'Выберите тип замечания:', getMenuKeyboard(Object.keys(remarkTypes)));
     }
-  } else if (user.currentStep === 3) {
+  } else if (user.currentStep === 4) {
     if (text === 'Добавить новое замечание') {
-      await user.update({ currentStep: 4 });
+      await user.update({ currentStep: 5 });
       bot.sendMessage(chatId, 'Выберите тип замечания:', getMenuKeyboard(Object.keys(remarkTypes)));
     } else if (remarkTypes[text]) {
       inspectionData[chatId].remarkType = text;
-      await user.update({ currentStep: 5 });
+      await user.update({ currentStep: 6 });
       bot.sendMessage(chatId, 'Выберите подтип замечания:', {
         reply_markup: {
           keyboard: remarkTypes[text].map(subtype => [{ text: subtype }]).concat([[{ text: 'Назад' }]]),
@@ -83,10 +90,10 @@ async function handleRemarkCreation(bot, msg, user) {
     } else {
       bot.sendMessage(chatId, 'Пожалуйста, выберите тип замечания из предложенных вариантов.');
     }
-  } else if (user.currentStep === 4) {
+  } else if (user.currentStep === 5) {
     if (remarkTypes[text]) {
       inspectionData[chatId].remarkType = text;
-      await user.update({ currentStep: 5 });
+      await user.update({ currentStep: 6 });
       bot.sendMessage(chatId, 'Выберите подтип замечания:', {
         reply_markup: {
           keyboard: remarkTypes[text].map(subtype => [{ text: subtype }]).concat([[{ text: 'Назад' }]]).concat([[{ text: 'Назад в главное меню' }]]),
@@ -96,13 +103,13 @@ async function handleRemarkCreation(bot, msg, user) {
     } else {
       bot.sendMessage(chatId, 'Пожалуйста, выберите тип замечания из предложенных вариантов.');
     }
-  } else if (user.currentStep === 5) {
+  } else if (user.currentStep === 6) {
     if (Object.values(remarkTypes).flat().includes(text)) {
       inspectionData[chatId].remarkSubtype = text;
-      await user.update({ currentStep: 6 });
+      await user.update({ currentStep: 7 });
       bot.sendMessage(chatId, 'Введите комментарий:');
     } else if (text === 'Назад') {
-      await user.update({ currentStep: 4 });
+      await user.update({ currentStep: 5 });
       bot.sendMessage(chatId, 'Выберите подтип замечания:', {
         reply_markup: {
           keyboard: remarkTypes[inspectionData[chatId].remarkType].map(subtype => [{ text: subtype }]).concat([[{ text: 'Назад' }]]).concat([[{ text: 'Назад в главное меню' }]]),
@@ -112,12 +119,13 @@ async function handleRemarkCreation(bot, msg, user) {
     } else {
       bot.sendMessage(chatId, 'Пожалуйста, выберите подтип замечания из предложенных вариантов.');
     }
-  } else if (user.currentStep === 6) {
-    const { cellAddress, remarkType, remarkSubtype, userId } = inspectionData[chatId];
+  } else if (user.currentStep === 7) {
+    const { location, cellAddress, remarkType, remarkSubtype, userId } = inspectionData[chatId];
     console.log(`Saving remark: cellAddress=${cellAddress}, remarkType=${remarkType}, remarkSubtype=${remarkSubtype}, comment=${text}, userId=${userId}`);
     try {
-      await Remark.create({ cellAddress, remarkType, remarkSubtype, comment: text, status: 'открыто', userId });
-      bot.sendMessage(chatId, `Замечание сохранено:\nАдрес ячейки: ${cellAddress}\nТип: ${remarkType}\nПодтип: ${remarkSubtype}\nКомментарий: ${text}`);
+      await sendToBitrix24({date: new Date(), location: LOCATION_LIST[location], address: cellAddress, remarkType: REMARK_TYPE_LIST[remarkType], remarkSubtype: REMARK_SUBTYPE_LIST[remarkSubtype], comment: text});
+      await Remark.create({ location,cellAddress, remarkType, remarkSubtype, comment: text, status: 'открыто', userId });
+      bot.sendMessage(chatId, `Замечание сохранено:\n[${location}]Адрес ячейки: ${cellAddress}\nТип: ${remarkType}\nПодтип: ${remarkSubtype}\nКомментарий: ${text}`);
       await user.update({ currentStep: 0 }); // Сброс текущего шага после завершения
       delete inspectionData[chatId]; // Очистка данных после завершения
 
@@ -150,14 +158,14 @@ async function handleRemarkStatusChange(bot, msg, user) {
     inspectionData[chatId] = {};
   }
 
-  if (user.currentStep === 7) {
-    await user.update({ currentStep: 8 });
+  if (user.currentStep === 8) {
+    await user.update({ currentStep: 9 });
     bot.sendMessage(chatId, 'Введите адрес ячейки:');
-  } else if (user.currentStep === 8) {
+  } else if (user.currentStep === 9) {
     const openRemarks = await Remark.findAll({ where: { cellAddress: text, status: 'открыто' } });
     if (openRemarks.length > 0) {
       inspectionData[chatId] = { cellAddress: text, userId: user.id, existingRemarks: openRemarks };
-      await user.update({ currentStep: 9 });
+      await user.update({ currentStep: 10 });
       bot.sendMessage(chatId, 'Выберите подтип замечания для изменения статуса:', {
         reply_markup: {
           keyboard: openRemarks.map((remark) => [{ text: remark.remarkSubtype }]).concat([[{ text: 'Назад в главное меню' }]]),
@@ -169,11 +177,11 @@ async function handleRemarkStatusChange(bot, msg, user) {
       await user.update({ currentStep: 0 });
       handleStart(bot, msg);
     }
-  } else if (user.currentStep === 9) {
+  } else if (user.currentStep === 10) {
     const selectedRemark = inspectionData[chatId].existingRemarks.find(remark => remark.remarkSubtype === text);
     if (selectedRemark) {
       inspectionData[chatId].remarkId = selectedRemark.id;
-      await user.update({ currentStep: 10 });
+      await user.update({ currentStep: 11 });
       bot.sendMessage(chatId, 'Выберите новый статус замечания:', getMenuKeyboard(['Исправлено', 'Не исправлено']));
     } else if (text === 'Назад в главное меню') {
       await user.update({ currentStep: 0 });
@@ -181,7 +189,7 @@ async function handleRemarkStatusChange(bot, msg, user) {
     } else {
       bot.sendMessage(chatId, 'Пожалуйста, выберите подтип замечания из предложенных вариантов.');
     }
-  } else if (user.currentStep === 10) {
+  } else if (user.currentStep === 11) {
     if (inspectionData[chatId] && inspectionData[chatId].remarkId) {
       const { remarkId } = inspectionData[chatId];
       try {
