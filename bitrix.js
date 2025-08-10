@@ -1,5 +1,4 @@
 const axios = require('axios');
-const { convertImageToBase64 } = require('./image.js');
 
 module.exports = {
     sendToBitrix24: async ({date, location, address, remarkType, remarkSubtype, comment}) => {
