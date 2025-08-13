@@ -49,13 +49,15 @@ async function handleRemarkCreation(bot, msg, user) {
   } else if (user.currentStep === 3) {
     const openRemarks = await Remark.findAll({ where: { cellAddress: text, status: 'открыто' } , order: [['createdAt', 'DESC']] });
     if (openRemarks.length > 0) {
-      let remarksText = `Существующие замечания для этой ячейки ${openRemarks.length}:\n`;
-      openRemarks.forEach((remark, index) => {
-        remarksText += `${index + 1}. ${remark.remarkSubtype} - ${remark.comment}\n`;
+      let remarksText = `Существующие замечания для этой ячейки (${openRemarks.length}):\n`;
+      for (let index = 0; index < openRemarks.length; index++) {
+        const remark = openRemarks[index];
+        remarksText += `${index + 1}. ${remark.remarkSubtype} - ${remark.comment}\n\n`;
         if (index === 5) {
           remarksText += '\n...';
+          break; // Breaks out of the loop after the 5th item
         }
-      });
+      }
       remarksText += '\nДобавьте новое или измените статус через главное меню.';
       inspectionData[chatId].cellAddress = text;
       inspectionData[chatId].existingRemarks = openRemarks;
