@@ -47,13 +47,16 @@ async function handleRemarkCreation(bot, msg, user) {
     inspectionData[chatId] = { location: text, userId: user.id, };
     bot.sendMessage(chatId, 'Введите адрес ячейки:');
   } else if (user.currentStep === 3) {
-    const openRemarks = await Remark.findAll({ where: { cellAddress: text, status: 'открыто' } });
+    const openRemarks = await Remark.findAll({ where: { cellAddress: text, status: 'открыто' } , order: [['createdAt', 'DESC']] });
     if (openRemarks.length > 0) {
-      let remarksText = 'Существующие замечания для этой ячейки:\n';
+      let remarksText = `Существующие замечания для этой ячейки ${openRemarks.length}:\n`;
       openRemarks.forEach((remark, index) => {
         remarksText += `${index + 1}. ${remark.remarkSubtype} - ${remark.comment}\n`;
+        if (index === 5) {
+          remarksText += '\n...';
+        }
       });
-      remarksText += '\nВыберите одно из замечаний для изменения статуса или добавьте новое.';
+      remarksText += '\nДобавьте новое или измените статус через главное меню.';
       inspectionData[chatId].cellAddress = text;
       inspectionData[chatId].existingRemarks = openRemarks;
       await user.update({ currentStep: 4 });
