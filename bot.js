@@ -20,7 +20,7 @@ function startPolling() {
       user = await User.create({ username: msg.from.username || msg.from.first_name || "test", chatId });
     }
 
-    if( text.toLowerCase() === 'назад в главное меню' || text.toLowerCase() === 'назад' || text.toLowerCase() === 'назад в главном меню') {
+    if( text.toLowerCase() === 'назад в главное меню') {
       await user.update({ currentStep: 0 });
       handleStart(bot, msg);
     } else if (text === 'Начать осмотр') {

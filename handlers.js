@@ -85,7 +85,7 @@ async function handleRemarkCreation(bot, msg, user) {
       await user.update({ currentStep: 6 });
       bot.sendMessage(chatId, 'Выберите подтип замечания:', {
         reply_markup: {
-          keyboard: remarkTypes[text].map(subtype => [{ text: subtype }]).concat([[{ text: 'Назад' }]]),
+          keyboard: remarkTypes[text].map(subtype => [{ text: subtype }]).concat([[{ text: 'Назад в главное меню' }]]),
           one_time_keyboard: true,
         },
       });
@@ -101,7 +101,7 @@ async function handleRemarkCreation(bot, msg, user) {
       await user.update({ currentStep: 6 });
       bot.sendMessage(chatId, 'Выберите подтип замечания:', {
         reply_markup: {
-          keyboard: remarkTypes[text].map(subtype => [{ text: subtype }]).concat([[{ text: 'Назад' }]]).concat([[{ text: 'Назад в главное меню' }]]),
+          keyboard: remarkTypes[text].map(subtype => [{ text: subtype }]).concat([[{ text: 'Назад в главное меню' }]]),
           one_time_keyboard: true,
         },
       });
@@ -117,7 +117,7 @@ async function handleRemarkCreation(bot, msg, user) {
       await user.update({ currentStep: 5 });
       bot.sendMessage(chatId, 'Выберите подтип замечания:', {
         reply_markup: {
-          keyboard: remarkTypes[inspectionData[chatId].remarkType].map(subtype => [{ text: subtype }]).concat([[{ text: 'Назад' }]]).concat([[{ text: 'Назад в главное меню' }]]),
+          keyboard: remarkTypes[inspectionData[chatId].remarkType].map(subtype => [{ text: subtype }]).concat([[{ text: 'Назад в главное меню' }]]),
           one_time_keyboard: true,
         },
       });
