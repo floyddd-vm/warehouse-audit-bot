@@ -78,12 +78,13 @@ const REMARK_SUBTYPE_LIST = {
   "Незавершенные работы по Солво": 225,
 }
 
-const locations = ["М19", "М70", "УЗ", "К8"];
+const locations = ["М19", "М70", "УЗ", "К8", "ТАРА"];
 const LOCATION_LIST = {
     "М19": 169,
     "М70": 170,
     "УЗ": 171,
     "К8": 172,
+    "ТАРА": 226,
 }
 
 const getMenuKeyboard = (options) => {
